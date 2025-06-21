@@ -173,33 +173,41 @@ function downvote(index) {
     updatePosts();
 }
 
-
+/*
+ * Handles user login.
+ */
 function login(){
+    // Get credentials
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-    let user = {
-        user: document.getElementById('username').value,
-        pass: document.getElementById('password').value
-    };
+    // Create AJAX
+    const xmlhttp = new XMLHttpRequest();
 
-    // Create AJAX Request
-    var xmlhttp = new XMLHttpRequest();
-
-    // Define function to run on response
+    // Define function run on response
     xmlhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            alert("Welcome "+this.responseText);
-        } else if (this.readyState == 4 && this.status >= 400) {
+            // On success, parse the response
+            const response = JSON.parse(this.responseText);
+            // Redirect based on user role
+            if (response.user.role === 'owner') {
+                window.location.href = '/owner-dashboard.html';
+            } else if (response.user.role === 'walker') {
+                window.location.href = '/walker-dashboard.html';
+            }
+        } else if (this.readyState == 4) {
+            // alert the user when fail
             alert("Login failed");
         }
     };
 
-    // Open connection to server & send the post data using a POST request
-    // We will cover POST requests in more detail in week 8
-    xmlhttp.open("POST", "/users/login", true);
+    // POST request login endpoint
+    xmlhttp.open("POST", "/api/users/login", true);
     xmlhttp.setRequestHeader("Content-type", "application/json");
-    xmlhttp.send(JSON.stringify(user));
-
+    // Send credentials as a JSON
+    xmlhttp.send(JSON.stringify({ email: email, password: password }));
 }
+
 
 function logout(){
 
@@ -207,7 +215,7 @@ function logout(){
     var xmlhttp = new XMLHttpRequest();
 
     // Open connection to server & send the post data using a POST request
-    xmlhttp.open("POST", "/users/logout", true);
+    xmlhttp.open("POST", "/api/users/logout", true);
     xmlhttp.send();
 
 }

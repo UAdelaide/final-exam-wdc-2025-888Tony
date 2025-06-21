@@ -8,12 +8,12 @@ const port = 3000;
 
 app.use(express.json());
 
+app.use(express.static('public'));
 
-// This function will execute an SQL script from a file.
+// --- Database Setup
 const executeSqlScript = async (pool, filePath) => {
     try {
         const script = await fs.readFile(filePath, 'utf-8');
-        // Split script into individual statements, ignoring empty ones.
         const statements = script.split(';').filter(statement => statement.trim() !== '');
         for (const statement of statements) {
             await pool.query(statement);
@@ -24,36 +24,31 @@ const executeSqlScript = async (pool, filePath) => {
         throw error;
     }
 };
-
 // This function sets up the database, creating it if it doesn't exist,
-// and then populating it with the schema and initial data.
 const setupDatabase = async () => {
     let pool;
     try {
-        // Create a connection without specifying a database to create it
         const connection = await mysql.createConnection({
             host: 'localhost',
             user: 'root',
-            password: '' // Enter your MySQL root password if you have one
+            password: ''
         });
         await connection.query('CREATE DATABASE IF NOT EXISTS DogWalkService');
         await connection.end();
         console.log("Database 'DogWalkService' is ready.");
 
-        // Now, create a connection pool for the newly created database
         pool = mysql.createPool({
             host: 'localhost',
             user: 'root',
-            password: '', // Enter your MySQL root password if you have one
+            password: '',
             database: 'DogWalkService',
             waitForConnections: true,
             connectionLimit: 10,
             queueLimit: 0,
-            multipleStatements: true // Allow multiple statements for script execution
+            multipleStatements: true
         });
 
 
-        // Execute the SQL scripts to define schema and insert data
         await executeSqlScript(pool, path.join(__dirname, 'dogwalks.sql'));
         await executeSqlScript(pool, path.join(__dirname, 'inserts.sql'));
 
@@ -61,16 +56,12 @@ const setupDatabase = async () => {
 
     } catch (err) {
         console.error('An error occurred during database setup:', err);
-        process.exit(1); // Exit if the database can't be set up
+        process.exit(1);
     }
 };
 
 
-// --- API Endpoints ---
-
-// This function initializes the routes after the database is ready.
 const initializeRoutes = (pool) => {
-    // Route to get all dogs with their owner's username
     app.get('/api/dogs', async (req, res) => {
         try {
             const [rows] = await pool.query(`
@@ -85,7 +76,6 @@ const initializeRoutes = (pool) => {
         }
     });
 
-    // Route to get all open walk requests
     app.get('/api/walkrequests/open', async (req, res) => {
         try {
             const [rows] = await pool.query(`
@@ -108,7 +98,6 @@ const initializeRoutes = (pool) => {
         }
     });
 
-    // Route to get a summary for each walker
     app.get('/api/walkers/summary', async (req, res) => {
         try {
             const [rows] = await pool.query(`
@@ -127,7 +116,6 @@ const initializeRoutes = (pool) => {
                 GROUP BY u.user_id, u.username
             `);
 
-            // Clean up the data format
             const summary = rows.map(row => ({
                 ...row,
                 average_rating: row.average_rating ? parseFloat(parseFloat(row.average_rating).toFixed(1)) : null,
@@ -141,9 +129,7 @@ const initializeRoutes = (pool) => {
     });
 };
 
-// --- Server Initialization ---
-
-// This main function starts the application.
+// Server Initializatio
 const main = async () => {
     const pool = await setupDatabase();
     initializeRoutes(pool);

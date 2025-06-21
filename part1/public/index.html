@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dog of the Day</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+
+        body {
+            background-color: #FFFFFF;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            width: 300vw;
+        }
+
+
+        #app-wrapper {
+            display: flex;
+            align-items: center;
+            height: 100vh;
+        }
+
+
+        .content-container {
+            display: flex;
+            align-items: center;
+            padding-left: 5vw;
+        }
+
+        .dog-image {
+            width: 50vw;
+            height: 60vh;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+
+        .info-icon {
+            font-size: 2rem;
+        }
+
+        .info-section {
+            margin-left: 20px;
+        }
+
+        .dog-details {
+            display: none;
+            color: #d3d3d3;
+            font-size: 1.5rem;
+            width: 200px;
+        }
+
+        /* Control question mark appear and disappearing */
+        .info-icon:hover + .dog-details {
+            display: block;
+        }
+
+        .refresh-button {
+            position: absolute;
+            left: 280vw;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        *:focus {
+            outline: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-wrapper">
+        <div id="app" class="content-container">
+
+            <img class="dog-image"
+                 :src="dogImage"
+                 @click="fetchDog"
+                 alt="">
+
+            <div class="info-section">
+                <div class="info-icon" tabindex="0">?</div>
+                <div class="dog-details">
+                    This is {{ dogInfo.name }}.
+                    <br>
+                    The {{ dogInfo.breed }}.
+                    <br>
+                    Written for final exam.
+                </div>
+            </div>
+
+            <div class="refresh-button" @click="fetchDog" tabindex="0" role="button">
+                &#x21bb;
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    dogImage: 'https://placehold.co/800x600/ccc/FFFFFF?text=Dog',
+                    dogInfo: {
+                        name: 'Doggo',
+                        breed: 'Best Doggo'
+                    }
+                };
+            },
+            methods: {
+                async fetchDog() {
+                    this.dogImage = 'https://placehold.co/800x600/ccc/FFFFFF?text=Fetching...';
+                    try {
+                        const response = await fetch('https://dog.ceo/api/breeds/image/random');
+                        const data = await response.json();
+                        if (response.ok && data.status === 'success') {
+                            this.dogImage = data.message;
+                        } else {
+                            this.dogImage = 'https://placehold.co/800x600/ff0000/FFFFFF?text=Error!';
+                        }
+                    } catch (e) {
+                        console.error("fetch failed", e);
+                        this.dogImage = 'https://placehold.co/800x600/ff0000/FFFFFF?text=Error!';
+                    }
+                }
+            },
+            mounted() {
+                this.fetchDog();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -17,10 +17,11 @@ router.post('/register', async (req, res) => {
   const { username, email, password, role } = req.body;
 
   try {
+    // a real application should hash the password before storing it.
     const [result] = await db.query(`
       INSERT INTO Users (username, email, password_hash, role)
       VALUES (?, ?, ?, ?)
-    `, [username, email, password, role]);
+    `, [username, email, password, role]); // Storing password in plain text
 
     res.status(201).json({ message: 'User registered', user_id: result.insertId });
   } catch (error) {
@@ -28,6 +29,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// GET the current logged-in user's data from the session
 router.get('/me', (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ error: 'Not logged in' });
@@ -35,7 +37,8 @@ router.get('/me', (req, res) => {
   res.json(req.session.user);
 });
 
-// POST login (dummy version)
+// POST login
+// This route now also creates a session for the user when successful login.
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -43,16 +46,31 @@ router.post('/login', async (req, res) => {
     const [rows] = await db.query(`
       SELECT user_id, username, role FROM Users
       WHERE email = ? AND password_hash = ?
-    `, [email, password]);
+    `, [email, password]); // Plain text password check as in original code
 
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Store user information in the session
+    req.session.user = rows[0];
 
     res.json({ message: 'Login successful', user: rows[0] });
   } catch (error) {
     res.status(500).json({ error: 'Login failed' });
   }
 });
+
+// POST logout
+router.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.clearCookie('connect.sid'); // Clears the session cookie
+    res.json({ message: 'Logout successful' });
+  });
+});
+
 
 module.exports = router;
