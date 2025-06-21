@@ -210,12 +210,14 @@ function login(){
 
 
 function logout(){
-
-    // Create AJAX Request
     var xmlhttp = new XMLHttpRequest();
-
-    // Open connection to server & send the post data using a POST request
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            window.location.href = '/index.html';
+        } else if (this.readyState == 4) {
+            alert('Logout failed');
+        }
+    };
     xmlhttp.open("POST", "/api/users/logout", true);
     xmlhttp.send();
-
 }
