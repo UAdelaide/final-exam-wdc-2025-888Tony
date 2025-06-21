@@ -17,7 +17,6 @@ router.post('/register', async (req, res) => {
   const { username, email, password, role } = req.body;
 
   try {
-    // a real application should hash the password before storing it.
     const [result] = await db.query(`
       INSERT INTO Users (username, email, password_hash, role)
       VALUES (?, ?, ?, ?)
@@ -36,6 +35,24 @@ router.get('/me', (req, res) => {
   }
   res.json(req.session.user);
 });
+
+// GET logged-in user's dogs
+router.get('/me/dogs', async (req, res) => {
+  if (!req.session.user || !req.session.user.user_id) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+
+  const ownerId = req.session.user.user_id;
+
+  try {
+    const [dogs] = await db.query('SELECT dog_id, name FROM Dogs WHERE owner_id = ?', [ownerId]);
+    res.json(dogs);
+  } catch (error) {
+    console.error('Failed to fetch user dogs:', error);
+    res.status(500).json({ error: 'Failed to fetch dogs' });
+  }
+});
+
 
 // POST login
 // This route now also creates a session for the user when successful login.
